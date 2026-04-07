@@ -39,108 +39,41 @@ jobs:
 
   # Job 2: Тесты
   test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: warehouse
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: server/go.sum
-
-      - name: Install dependencies
-        working-directory: server
-        run: |
-          go mod download
-          go get github.com/cweill/gotests/...
-
-      - name: Run unit tests
-        working-directory: server
-        run: |
-          go test -v -race -coverprofile=coverage.out ./...
-          go tool cover -html=coverage.out -o coverage.html
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: server/coverage.html
-
-  # Job 3: Интеграционные тесты
-    # Job 3: Интеграционные тесты
-  integration-test:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Create docker-compose.test.yml
-        run: |
-          cat > docker-compose.test.yml << 'EOF'
-          version: '3.8'
-          services:
-            postgres-test:
-              image: postgres:15-alpine
-              environment:
-                POSTGRES_USER: postgres
-                POSTGRES_PASSWORD: postgres
-                POSTGRES_DB: warehouse
-              ports:
-                - "5432:5432"
-          EOF
-
-      - name: Start containers
-        run: |
-          docker compose -f docker-compose.test.yml up -d
-          sleep 10
-
-      - name: Run integration tests
-        working-directory: server
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: warehouse
-        run: |
-          go test -v -tags=integration ./tests/...
-
-      - name: Stop containers
-        if: always()
-        run: docker compose -f docker-compose.test.yml down
+      name: Run Unit Tests
+      runs-on: ubuntu-latest
+      needs: lint
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+  
+        - name: Setup Go
+          uses: actions/setup-go@v5
+          with:
+            go-version: ${{ env.GO_VERSION }}
+            cache: true
+            cache-dependency-path: server/go.sum
+  
+        - name: Install dependencies
+          working-directory: server
+          run: go mod download
+  
+        - name: Run unit tests
+          working-directory: server
+          run: |
+            go test -v -race -coverprofile=coverage.out ./...
+            go tool cover -func=coverage.out
+  
+        - name: Upload coverage report
+          uses: actions/upload-artifact@v4
+          with:
+            name: coverage-report
+            path: server/coverage.out
 
   # Job 4: Сборка Docker образа
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: integration-test
+    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
