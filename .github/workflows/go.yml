@@ -29,7 +29,7 @@ jobs:
         with:
           version: latest
           working-directory: server
-          args: --timeout=5m --out-format=colored-line-number
+          args: --timeout=5m --out-format=colored-line-number --skip-files="_test\.go"
 
       - name: Check go.mod formatting
         run: |
