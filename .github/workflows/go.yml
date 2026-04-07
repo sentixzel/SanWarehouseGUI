@@ -13,7 +13,7 @@ env:
 
 jobs:
   # Job 1: Линтинг и проверка кода
-  lint:
+    lint:
     name: Lint and Code Quality
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +30,9 @@ jobs:
         with:
           version: latest
           working-directory: server
-          args: --timeout=5m
+          args: --timeout=5m --out-format=colored-line-number
+          # Добавлен флаг для игнорирования deprecated warning
+          skip-cache: false
 
       - name: Check go.mod formatting
         run: |
