@@ -45,7 +45,12 @@ func TestCreateProduct(t *testing.T) {
 		SellingPrice: 500,
 	}
 
-	body, _ := json.Marshal(product)
+	// ИСПРАВЛЕНО: проверяем ошибку Marshal
+	body, err := json.Marshal(product)
+	if err != nil {
+		t.Fatalf("Failed to marshal product: %v", err)
+	}
+
 	req, err := http.NewRequest("POST", "/api/products", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
@@ -171,5 +176,40 @@ func TestStatistics(t *testing.T) {
 		if _, ok := stats[key]; !ok {
 			t.Errorf("Statistics missing key: %s", key)
 		}
+	}
+}
+
+// Дополнительный тест для проверки получения продукта по ID
+func TestGetProductByID(t *testing.T) {
+	api := NewAPI()
+
+	// Сначала создаем продукт
+	product := models.Product{
+		SKU:          "TEST-GET-001",
+		Name:         "Test Get Product",
+		Quantity:     10,
+		SellingPrice: 1000,
+	}
+
+	body, err := json.Marshal(product)
+	if err != nil {
+		t.Fatalf("Failed to marshal product: %v", err)
+	}
+
+	createReq, _ := http.NewRequest("POST", "/api/products", bytes.NewBuffer(body))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRR := httptest.NewRecorder()
+	http.HandlerFunc(api.createProduct).ServeHTTP(createRR, createReq)
+
+	var createdProduct models.Product
+	json.NewDecoder(createRR.Body).Decode(&createdProduct)
+
+	// Теперь получаем продукт по ID
+	getReq, _ := http.NewRequest("GET", "/api/products/"+string(rune(createdProduct.ID)), nil)
+	getRR := httptest.NewRecorder()
+	http.HandlerFunc(api.getProduct).ServeHTTP(getRR, getReq)
+
+	if status := getRR.Code; status != http.StatusOK {
+		t.Errorf("Get product returned wrong status: got %v want %v", status, http.StatusOK)
 	}
 }

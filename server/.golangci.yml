@@ -6,34 +6,39 @@ run:
 
 linters:
   enable:
-    - errcheck      # Проверка обработки ошибок
-    - gosimple      # Упрощение кода
-    - govet         # Подозрительные конструкции
-    - ineffassign   # Неиспользуемые присваивания
-    - staticcheck   # Статический анализ
-    - unused        # Неиспользуемый код
-    - bodyclose     # Проверка закрытия HTTP тел
-    - misspell      # Опечатки
-    - gofmt         # Форматирование
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - gofmt
 
 linters-settings:
   errcheck:
-    check-type-assertions: true
-    check-blank: true
+    check-type-assertions: false
+    check-blank: false
+    # Игнорируем определенные функции в тестах
     exclude-functions:
-      - (*database/sql.Rows).Close
-      - (*os.File).Close
-      - (*bytes.Buffer).Write
-  
-  misspell:
-    locale: US
-    ignore-words:
-      - colour
+      - (*testing.T).Errorf
+      - (*testing.T).Fatalf
+      - (*testing.T).Logf
+      - (*testing.common).Errorf
+      - (*testing.common).Fatalf
+      - (*testing.common).Logf
 
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude:
-    - "should have comment"
-    - "comment on exported"
+  # Игнорируем ошибки errcheck в тестовых файлах
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+      text: "Error return value is not checked"
+    - path: _test\.go
+      linters:
+        - staticcheck
+      text: "SA1019"

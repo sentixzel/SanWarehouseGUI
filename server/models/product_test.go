@@ -95,8 +95,11 @@ func TestProductBeforeSave(t *testing.T) {
 			// Сохраняем оригинальный статус
 			originalStatus := tt.product.Status
 
-			// Вызываем BeforeSave
-			tt.product.BeforeSave(nil)
+			// ИСПРАВЛЕНО: проверяем ошибку
+			err := tt.product.BeforeSave(nil)
+			if err != nil {
+				t.Errorf("BeforeSave() returned error: %v", err)
+			}
 
 			if tt.product.Status == originalStatus && tt.expected != originalStatus {
 				t.Errorf("BeforeSave() did not update status. Got %v, want %v",
