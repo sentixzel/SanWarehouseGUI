@@ -5,15 +5,14 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # Ручной запуск
+  workflow_dispatch:
 
 env:
   GO_VERSION: '1.21'
-  DOCKER_COMPOSE_VERSION: '2.23.0'
 
 jobs:
   # Job 1: Линтинг и проверка кода
-    lint:
+  lint:
     name: Lint and Code Quality
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +30,6 @@ jobs:
           version: latest
           working-directory: server
           args: --timeout=5m --out-format=colored-line-number
-          # Добавлен флаг для игнорирования deprecated warning
-          skip-cache: false
 
       - name: Check go.mod formatting
         run: |
@@ -49,9 +46,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: warehouse
         ports:
           - 5432:5432
         options: >-
@@ -75,7 +72,7 @@ jobs:
         working-directory: server
         run: |
           go mod download
-          go install github.com/cweill/gotests/...
+          go get github.com/cweill/gotests/...
 
       - name: Run unit tests
         working-directory: server
@@ -89,24 +86,46 @@ jobs:
           name: coverage-report
           path: server/coverage.html
 
+  # Job 3: Интеграционные тесты
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Start containers
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 10
+
       - name: Run integration tests
         working-directory: server
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: warehouse
         run: |
           go test -v -tags=integration ./tests/...
 
-  # Job 3: Сборка Docker образа
+      - name: Stop containers
+        if: always()
+        run: docker-compose -f docker-compose.test.yml down
+
+  # Job 4: Сборка Docker образа
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: test
+    needs: integration-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
