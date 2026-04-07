@@ -1,0 +1,39 @@
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - vendor
+
+linters:
+  enable:
+    - errcheck      # Проверка обработки ошибок
+    - gosimple      # Упрощение кода
+    - govet         # Подозрительные конструкции
+    - ineffassign   # Неиспользуемые присваивания
+    - staticcheck   # Статический анализ
+    - unused        # Неиспользуемый код
+    - bodyclose     # Проверка закрытия HTTP тел
+    - misspell      # Опечатки
+    - gofmt         # Форматирование
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (*database/sql.Rows).Close
+      - (*os.File).Close
+      - (*bytes.Buffer).Write
+  
+  misspell:
+    locale: US
+    ignore-words:
+      - colour
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    - "should have comment"
+    - "comment on exported"
