@@ -1,0 +1,41 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: CI/CD Pipeline for Sanitary Warehouse
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Ручной запуск
+
+env:
+  GO_VERSION: '1.21'
+  DOCKER_COMPOSE_VERSION: '2.23.0'
+
+jobs:
+  # Job 1: Линтинг и проверка кода
+  lint:
+    name: Lint and Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: server
+          args: --timeout=5m
+
+      - name: Check go.mod formatting
+        run: |
+          cd server
+          go mod tidy
+          git diff --exit-code go.mod go.sum
