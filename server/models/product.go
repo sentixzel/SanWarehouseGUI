@@ -11,7 +11,7 @@ type ProductStatus string
 const (
 	StatusInStock    ProductStatus = "В наличии"
 	StatusLowStock   ProductStatus = "Мало"
-	StatusOutOfStock ProductStatus = "Нет в наличии"
+	StatusOutOfStock ProductStatus = "Out of Stock"
 	StatusOnOrder    ProductStatus = "Под заказ"
 )
 

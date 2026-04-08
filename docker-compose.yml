@@ -24,9 +24,7 @@ services:
 
   # Сервер приложения
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: sha256:76612c6a03c64e86cbb40600d7f17e99729882a6792a7d00dd6d1de498e1f1ae
     container_name: warehouse-server
     environment:
       DB_HOST: ${DB_HOST}
