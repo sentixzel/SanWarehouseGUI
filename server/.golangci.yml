@@ -19,7 +19,6 @@ linters-settings:
   errcheck:
     check-type-assertions: false
     check-blank: false
-    # Игнорируем определенные функции в тестах
     exclude-functions:
       - (*testing.T).Errorf
       - (*testing.T).Fatalf
@@ -32,7 +31,6 @@ issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  # Игнорируем ошибки errcheck в тестовых файлах
   exclude-rules:
     - path: _test\.go
       linters:
